@@ -12,17 +12,18 @@ module tb_uart();
     .reset(reset),
     .startSignal(startSignal),
     .tx_data(tx_data),
-    .txd(txd)
+    .o_txd(txd)
     );
 
     // gen clk
     always #5 clk = ~clk; // clk period = 10ns
 
     initial begin
-        #00 clk = 0; reset = 1; startSignal = 0; tx_data=8'b10100011;
+        #00 clk = 0; reset = 1; 
+        startSignal = 0; tx_data=8'b10100011;
         #10 reset = 0;
-        #30 startSignal = 1;
-        #35 startSignal = 0;
+        #15 startSignal = 1;
+        #20 startSignal = 0;
         #350 $finish;
     end
 endmodule
