@@ -22,7 +22,7 @@ module ascii_send(
         if(reset) begin
             state <= IDLE;
             a_data_reg <= 8'h30; // '0' ascii code 0x30
-            start_reg <= 1'b0; // '0' ascii code 0x30
+            start_reg <= 1'b0;
         end else begin
             state <= next_state;
             a_data_reg <= a_data_next;
