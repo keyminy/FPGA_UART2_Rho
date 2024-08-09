@@ -39,7 +39,7 @@ module ascii_send(
             IDLE: begin
                 start_next = 1'b0;
                 if(btn == 1'b1) begin
-                    start_next = 1'b1;
+                    // start_next = 1'b1;
                     next_state = TX;
                 end
             end
