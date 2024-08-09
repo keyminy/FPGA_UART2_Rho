@@ -83,9 +83,8 @@ module receiver(
                     if(bit_cnt_reg == 7) begin
                         next_state = STOP_S;
                         bit_cnt_next = 0;
-                        rx_data_reg_next = temp_data_next;
                     end else begin
-                        temp_data_next = {rx,temp_data_next[7:1]};
+                        rx_data_reg_next = {rx,rx_data_reg[7:1]};
                         bit_cnt_next = bit_cnt_reg + 1;
                     end
                 end else begin
