@@ -32,15 +32,15 @@ module ascii_send(
 
      // 2.next state combinational logic
     always @(*) begin
-        next_state <= state;
-        start_next <= start_reg;
-        a_data_next <= a_data_reg;
+        next_state = state;
+        start_next = start_reg;
+        a_data_next = a_data_reg;
         case(state)
             IDLE: begin
                 start_next = 1'b0;
                 if(btn == 1'b1) begin
-                    // start_next = 1'b1;
                     next_state = TX;
+                    // start_next = 1'b1;
                 end
             end
             TX: begin
