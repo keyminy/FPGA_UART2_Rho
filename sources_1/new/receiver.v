@@ -41,7 +41,7 @@ module receiver(
             state <= next_state;
             tick_cnt_reg <= tick_cnt_next;
             bit_cnt_reg <= bit_cnt_next;
-            // temp_data <= temp_data_next;
+            temp_data <= temp_data_next;
             // rx_reg <= rx_reg_next;
             rx_done_reg <= rx_done_reg_next;
             rx_data_reg <= rx_data_reg_next;
@@ -53,7 +53,7 @@ module receiver(
         next_state = state;
         // rx_reg_next = rx_reg;
         rx_done_reg_next = rx_done_reg;
-        // temp_data_next = temp_data;
+        temp_data_next = temp_data;
         rx_data_reg_next = rx_data_reg;
         tick_cnt_next = tick_cnt_reg;
         bit_cnt_next = bit_cnt_reg;
@@ -68,7 +68,7 @@ module receiver(
         end
         START_S: begin
             if(br_tick) begin
-                if(tick_cnt_reg == 15) begin
+                if(tick_cnt_reg == 7) begin
                     next_state = DATA_S;
                     tick_cnt_next = 0;
                 end else begin
@@ -78,13 +78,14 @@ module receiver(
         end
         DATA_S : begin
             if(br_tick) begin
-                if(tick_cnt_reg == 7) begin
+                if(tick_cnt_reg == 15) begin
                     tick_cnt_next = 0;
                     if(bit_cnt_reg == 7) begin
                         next_state = STOP_S;
                         bit_cnt_next = 0;
+                        rx_data_reg_next = temp_data_next;
                     end else begin
-                        rx_data_reg_next = {rx,rx_data_reg[7:1]};
+                        temp_data_next = {rx,temp_data_next[7:1]};
                         bit_cnt_next = bit_cnt_reg + 1;
                     end
                 end else begin
@@ -94,7 +95,7 @@ module receiver(
         end
         STOP_S : begin
             if(br_tick) begin
-                if(tick_cnt_reg == 15) begin
+                if(tick_cnt_reg == 7) begin
                     rx_done_reg_next = 1'b1;
                     tick_cnt_next = 0;
                     next_state = IDLE_S;
