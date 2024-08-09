@@ -6,6 +6,7 @@ module tb_uart();
     reg startSignal;
     reg [7:0] tx_data;
     wire tx_done;
+    wire rx_done;
     wire txd;
 
     top_uart dut_top_uart(
@@ -14,7 +15,8 @@ module tb_uart();
     .start(startSignal),
     .tx_data(tx_data),
     .o_txd(txd),
-    .o_done(tx_done)
+    .o_tx_done(tx_done),
+    .o_rx_done(rx_done)
     );
 
     // gen clk
@@ -26,14 +28,8 @@ module tb_uart();
         #10 reset = 0;
         #10 tx_data=8'b10100011; startSignal = 1;
         #10 startSignal = 0;
-        // tx_doneÀÇ »ó½Â¿§Áö±îÁö block»óÅÂ°¡ µÈ´Ù.(°¨½ÃÇÑ´Ù´Â ÀÇ¹Ì)
-        @(posedge tx_done); // doneÀÌ ¿Ã¶§°¡Áö ±â´Ù¸°´Ù
-        #10 tx_data=8'b10100011; startSignal = 1;
-        #10 startSignal = 0;
-        @(posedge tx_done); // doneÀÌ ¿Ã¶§°¡Áö ±â´Ù¸°´Ù
-        #10 tx_data=8'b10101111; startSignal = 1;
-        #10 startSignal = 0;
-        @(posedge tx_done); // doneÀÌ ¿Ã¶§°¡Áö ±â´Ù¸°´Ù
-        #10 $finish;
+        // tx_doneì˜ ìƒìŠ¹ì—£ì§€ê¹Œì§€ blockìƒíƒœê°€ ëœë‹¤.(ê°ì‹œí•œë‹¤ëŠ” ì˜ë¯¸)
+        
+        #300 $finish;
     end
 endmodule

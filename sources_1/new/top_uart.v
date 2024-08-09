@@ -5,8 +5,10 @@ module top_uart(
     input reset,
     input start,
     input [7:0] tx_data,
+    output [7:0] o_rx_data,
     output o_txd,
-    output o_done
+    output o_tx_done,
+    output o_rx_done
     );
 
     wire w_br_tick;
@@ -25,7 +27,16 @@ module top_uart(
         .tx_data(tx_data),
         // output
         .tx(o_txd),
-        .tx_done(o_done)
+        .tx_done(o_tx_done)
+    );
+
+    receiver u_receiver(
+        .clk(clk),
+        .reset(reset),
+        .rx(o_txd),
+        .br_tick(w_br_tick),
+        .rx_data(o_rx_data),
+        .rx_done(o_rx_done)
     );
 endmodule
 
@@ -47,8 +58,8 @@ module baudrate_generator(
             // 10bps : 10_000_000 - 1 (0을 1개 제거), 1초에 10클럭 발생
             // 100bps : 1_000_000 - 1 (0을 2개 제거), 1초에 100클럭 발생
             // 100bps의 의미 : 100_000_000/100 해준 값임.
-            if(r_counter == 100_000_000/9600/16 - 1) begin
-            // if(r_counter == 10 - 1) begin
+            // if(r_counter == 100_000_000/9600/16 - 1) begin
+            if(r_counter == 10 - 1) begin
                 r_counter <= 0;
                 r_tick <= 1'b1;
             end else begin
@@ -69,9 +80,10 @@ module transmitter (
     output tx
 );
     reg [3:0] state,next_state;
-    reg tx_reg, tx_next,tx_done_reg,tx_done_next;
+    reg tx_reg, tx_next;
+    reg tx_done_reg,tx_done_next;
     reg [7:0] temp_data_reg,temp_data_next;
-    reg [3:0] tick_cnt_reg,tick_cnt_next;
+    reg [3:0] tick_cnt_reg,tick_cnt_next; // 16번 sampling용도로 셈
     reg [2:0] bit_cnt_reg,bit_cnt_next;//8개,3빗
     
     parameter IDLE_S = 4'd0;
@@ -127,7 +139,7 @@ module transmitter (
                 tx_next = 1'b0;
                 if(br_tick) begin
                     if(tick_cnt_reg == 15) begin
-                        next_state = DATA_S;  //br_tick이 들어오지 않으면, next_state = state;로 자기자신(start) 유지!!!
+                        next_state = DATA_S; 
                         tick_cnt_next = 0;
                     end else begin
                         tick_cnt_next = tick_cnt_reg + 1;

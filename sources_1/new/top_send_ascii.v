@@ -15,7 +15,7 @@ module top_send_ascii(
     .start(w_start),
     .tx_data(w_tx_data),
     .o_txd(tx),
-    .o_done() //none connect
+    .o_tx_done() //none connect
     );
 
     debounce u_btn(
