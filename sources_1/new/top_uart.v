@@ -100,6 +100,7 @@ module transmitter (
         next_state = state; // latch를 막기위함
         tx_next = tx_reg;
         tx_done_next = tx_done_reg;
+        temp_data_next = temp_data_reg;
         case(state)
             IDLE_S: begin
                 // tx=1,done=0
