@@ -44,9 +44,9 @@ module baudrate_generator(
             r_tick <= 1'b0;
         end else begin
             // 1bps : 100_000_000 - 1
-            // 10bps : 10_000_000 - 1 (0�� 1�� ����), 1초에 10클럭 발생
-            // 100bps : 1_000_000 - 1 (0�� 2�� ����), 1초에 100클럭 발생
-            // 100bps�� �� 100_000_000/100�̴�.
+            // 10bps : 10_000_000 - 1 (0을 1개 제거), 1초에 10클럭 발생
+            // 100bps : 1_000_000 - 1 (0을 2개 제거), 1초에 100클럭 발생
+            // 100bps의 의미 : 100_000_000/100 해준 값임.
             // if(r_counter == 100_000_000/9600 - 1) begin
             if(r_counter == 10 - 1) begin
                 r_counter <= 0;
@@ -76,11 +76,11 @@ module transmitter (
     parameter START_S = 4'd1;
     parameter D0_S = 4'd2, D1_S = 4'd3, D2_S = 4'd4, D3_S = 4'd5, D4_S = 4'd6, D5_S = 4'd7, D6_S = 4'd8, D7_S = 4'd9;
     parameter STOP_S = 4'd10;
-    //output combinational logic
+    //3.output combinational logic
     assign tx = tx_reg;
     assign tx_done = tx_done_reg;
 
-    //state var
+    //1.state var register
     always @(posedge clk,posedge reset) begin
         if(reset) begin
             state <= IDLE_S;
@@ -95,7 +95,7 @@ module transmitter (
         end
     end
 
-    // next state combinational logic
+    // 2.next state combinational logic
     always @(*) begin
         next_state = state; // latch를 막기위함
         tx_next = tx_reg;
