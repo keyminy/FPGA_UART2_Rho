@@ -9,7 +9,7 @@ module top_send_ascii(
     wire w_start,w_btn;
     wire [7:0] w_tx_data;
 
-    top_uart u_uart(
+    uart u_uart_send_ascii(
     .clk(clk),
     .reset(reset),
     .start(w_start),
