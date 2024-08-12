@@ -12,7 +12,7 @@ module tb_uart();
     wire rx_done;
     wire w_loop;
 
-    top_uart dut_top_uart(
+    uart_why dut_uartwhy(
         // globla signal
     .clk(clk),
     .reset(reset),

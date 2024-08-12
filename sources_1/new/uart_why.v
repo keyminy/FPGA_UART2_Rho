@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module uart(
+module uart_why(
     // global signal
     input clk,
     input reset,
@@ -31,16 +31,14 @@ module uart(
         .start(start),
         .tx_data(tx_data),
         // output
-        // .tx(o_txd),
-        .tx(w_loop),
+        .tx(o_txd),
         .tx_done(o_tx_done)
     );
 
     receiver u_receiver(
         .clk(clk),
         .reset(reset),
-        // .rx(rx),
-        .rx(w_loop),
+        .rx(rx),
         .br_tick(w_br_tick),
         .rx_data(o_rx_data),
         .rx_done(o_rx_done)
@@ -73,9 +71,9 @@ module baudrate_generator(
             r_tick <= 1'b0;
         end else begin
             // 1bps : 100_000_000 - 1
-            // 10bps : 10_000_000 - 1 (0�� 1�� ����), 1�ʿ� 10Ŭ�� �߻�
-            // 100bps : 1_000_000 - 1 (0�� 2�� ����), 1�ʿ� 100Ŭ�� �߻�
-            // 100bps�� �ǹ� : 100_000_000/100 ���� ����.
+            // 10bps : 10_000_000 - 1 (0을 1개 제거), 1초에 10클럭 발생
+            // 100bps : 1_000_000 - 1 (0을 2개 제거), 1초에 100클럭 발생
+            // 100bps의 의미 : 100_000_000/100 해준 값임.
             if(r_counter == 100_000_000/9600/16 - 1) begin
             // if(r_counter == 10 - 1) begin
                 r_counter <= 0;
@@ -101,8 +99,8 @@ module transmitter (
     reg tx_reg, tx_next;
     reg tx_done_reg,tx_done_next;
     reg [7:0] temp_data_reg,temp_data_next;
-    reg [3:0] tick_cnt_reg,tick_cnt_next; // 16�� sampling�뵵�� ��
-    reg [2:0] bit_cnt_reg,bit_cnt_next;//8��,3��
+    reg [3:0] tick_cnt_reg,tick_cnt_next; // 16번 sampling용도로 셈
+    reg [2:0] bit_cnt_reg,bit_cnt_next;//8개,3빗
     
     parameter IDLE_S = 4'd0;
     parameter START_S = 4'd1;
@@ -134,22 +132,22 @@ module transmitter (
 
     // 2.next state combinational logic
     always @(*) begin
-        next_state = state; // latch�� ��������
+        next_state = state; // latch를 막기위함
         tx_next = tx_reg;
         tx_done_next = tx_done_reg;
         temp_data_next = temp_data_reg;
         tick_cnt_next = tick_cnt_reg;
-        bit_cnt_next = bit_cnt_reg;// latch�� ��������
+        bit_cnt_next = bit_cnt_reg;// latch를 막기위함
         case(state)
             IDLE_S: begin
                 // tx=1,done=0
                 tx_next = 1'b1;
                 tx_done_next = 1'b0;
                 if(start == 1'b1) begin
-                    // data�� next state�� �� ���� "latching"�Ѵٰ� �Ѵ�.
+                    // data의 next state에 값 저장 "latching"한다고 한다.
                     temp_data_next = tx_data;
                     next_state = START_S;
-                    tick_cnt_next = 0; // start��ȣ ������ �ʱ�ȭ
+                    tick_cnt_next = 0; // start신호 들어오면 초기화
                     bit_cnt_next = 0;
                 end
             end
@@ -185,7 +183,7 @@ module transmitter (
             //     tx_next = temp_data_next[0];
             //     if(br_tick) begin
             //         if(tick_cnt_reg == 15) begin
-            //             next_state = D1_S;  //br_tick�� ������ ������, next_state = state;�� �ڱ��ڽ�(start) ����!!!
+            //             next_state = D1_S;  //br_tick이 들어오지 않으면, next_state = state;로 자기자신(start) 유지!!!
             //             tick_cnt_next = 0;
             //         end else begin
             //             tick_cnt_next = tick_cnt_reg + 1;
@@ -196,7 +194,7 @@ module transmitter (
             //     tx_next = temp_data_next[1];
             //     if(br_tick) begin
             //         if(tick_cnt_reg == 15) begin
-            //             next_state = D2_S;  //br_tick�� ������ ������, next_state = state;�� �ڱ��ڽ�(start) ����!!!
+            //             next_state = D2_S;  //br_tick이 들어오지 않으면, next_state = state;로 자기자신(start) 유지!!!
             //             tick_cnt_next = 0;
             //         end else begin
             //             tick_cnt_next = tick_cnt_reg + 1;
@@ -207,7 +205,7 @@ module transmitter (
             //     tx_next = temp_data_next[2];
             //     if(br_tick) begin
             //         if(tick_cnt_reg == 15) begin
-            //             next_state = D3_S;  //br_tick�� ������ ������, next_state = state;�� �ڱ��ڽ�(start) ����!!!
+            //             next_state = D3_S;  //br_tick이 들어오지 않으면, next_state = state;로 자기자신(start) 유지!!!
             //             tick_cnt_next = 0;
             //         end else begin
             //             tick_cnt_next = tick_cnt_reg + 1;
@@ -218,7 +216,7 @@ module transmitter (
             //     tx_next = temp_data_next[3];
             //     if(br_tick) begin
             //         if(tick_cnt_reg == 15) begin
-            //             next_state = D4_S;  //br_tick�� ������ ������, next_state = state;�� �ڱ��ڽ�(start) ����!!!
+            //             next_state = D4_S;  //br_tick이 들어오지 않으면, next_state = state;로 자기자신(start) 유지!!!
             //             tick_cnt_next = 0;
             //         end else begin
             //             tick_cnt_next = tick_cnt_reg + 1;
@@ -229,7 +227,7 @@ module transmitter (
             //     tx_next = temp_data_next[4];
             //     if(br_tick) begin
             //         if(tick_cnt_reg == 15) begin
-            //             next_state = D5_S;  //br_tick�� ������ ������, next_state = state;�� �ڱ��ڽ�(start) ����!!!
+            //             next_state = D5_S;  //br_tick이 들어오지 않으면, next_state = state;로 자기자신(start) 유지!!!
             //             tick_cnt_next = 0;
             //         end else begin
             //             tick_cnt_next = tick_cnt_reg + 1;
@@ -300,7 +298,7 @@ module receiver(
     reg [1:0] state,next_state;
     reg [7:0] rx_data_reg,rx_data_next;
     reg [15:0] sample_bit_reg,sample_bit_next;
-    reg [2:0] bit_cnt_reg,bit_cnt_next; // 8�� count
+    reg [2:0] bit_cnt_reg,bit_cnt_next; // 8번 count
     reg [3:0] sample_cnt_reg, sample_cnt_next;
     reg rx_done_reg,rx_done_next;
 
@@ -343,15 +341,15 @@ module receiver(
             IDLE: begin
                 rx_done_next = 1'b0;
                 if(rx == 1'b0) begin
-                    // start��ȣ�� ������
+                    // start신호가 들어오면
                     sample_cnt_next = 0; // baud rate sample cnt
                     next_state = START;
                 end else begin
-                    next_state = IDLE; // state�� �ڱ��ڽ�����
+                    next_state = IDLE; // state를 자기자신으로
                 end
             end
             START: begin
-                // rx_data = ���������� �ʱ�ȭ �صδ� ��.
+                // rx_data = 받을데이터 초기화 해두는 것.
                 rx_data_next = 0;
                 if(br_tick) begin
                     if(sample_cnt_reg == 15) begin
@@ -359,19 +357,19 @@ module receiver(
                         next_state = DATA;
                     end else begin
                         sample_cnt_next = sample_cnt_reg + 1;
-                        next_state = START; //�ڱ��ڽ� ����
+                        next_state = START; //자기자신 유지
                     end
                 end
             end 
             DATA : begin
                 if(br_tick) begin
-                    sample_bit_next = {rx,sample_bit_reg[15:1]}; // 15�� �ȵǼ�?? ���� �ø�
+                    sample_bit_next = {rx,sample_bit_reg[15:1]}; // 15가 안되서?? 위로 올림
                     if(sample_cnt_reg == 15) begin
                         sample_cnt_next = 0;
                         // rx_data_next[7] = sample_bit_reg[7];
                         rx_data_next = {sample_bit_reg[7],rx_data_reg[7:1]};
                         if(bit_cnt_reg == 7) begin
-                            // 8��Ʈ �� ä���
+                            // 8비트 다 채우면
                             bit_cnt_next = 0;
                             next_state = STOP;
                         end else begin

@@ -10,7 +10,7 @@ module top_uart(
     wire w_rx_done;
     wire [7:0] w_rx_data;
 
-    uart_idk u_uart_idk(
+    uart_why u_uart_why03(
         // globla signal
         .clk(clk),
         .reset(reset),
