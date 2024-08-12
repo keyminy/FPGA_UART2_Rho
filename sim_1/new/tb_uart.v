@@ -23,7 +23,7 @@ module tb_uart();
     .o_tx_done(tx_done),
     // rx signal
     .rx(w_loop),
-    .rx_data(rx_data),
+    .o_rx_data(rx_data),
     .o_rx_done(rx_done)
     );
 
