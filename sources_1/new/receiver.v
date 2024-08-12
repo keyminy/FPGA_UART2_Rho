@@ -14,7 +14,7 @@ module receiver(
     reg rx_done_reg,rx_done_reg_next;
     reg [7:0] temp_data,temp_data_next;
     reg [7:0] rx_data_reg,rx_data_reg_next;
-    reg [3:0] tick_cnt_reg,tick_cnt_next; // 16번 sampling용도로 셈
+    reg [4:0] tick_cnt_reg,tick_cnt_next; // 16번 sampling용도로 셈
     reg [2:0] bit_cnt_reg,bit_cnt_next;//8개,3빗
 
     // 3. output combinational logic
@@ -62,6 +62,7 @@ module receiver(
             rx_done_reg_next = 1'b0;
             if(rx == 1'b0) begin
                 next_state = START_S;
+                rx_data_reg_next = 8'b0;
                 tick_cnt_reg = 0;
                 bit_cnt_reg = 0;
             end
@@ -80,11 +81,11 @@ module receiver(
             if(br_tick) begin
                 if(tick_cnt_reg == 15) begin
                     tick_cnt_next = 0;
+					rx_data_reg_next = {rx,rx_data_reg[7:1]};
                     if(bit_cnt_reg == 7) begin
                         next_state = STOP_S;
                         bit_cnt_next = 0;
                     end else begin
-                        rx_data_reg_next = {rx,rx_data_reg[7:1]};
                         bit_cnt_next = bit_cnt_reg + 1;
                     end
                 end else begin
@@ -94,8 +95,9 @@ module receiver(
         end
         STOP_S : begin
             if(br_tick) begin
-                if(tick_cnt_reg == 7) begin
+                if(tick_cnt_reg == 23) begin
                     rx_done_reg_next = 1'b1;
+                    // rx_data_reg_next = 8'b0;
                     tick_cnt_next = 0;
                     next_state = IDLE_S;
                 end else begin
@@ -105,6 +107,4 @@ module receiver(
         end
         endcase
     end
-
-
 endmodule

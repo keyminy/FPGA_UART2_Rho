@@ -55,9 +55,9 @@ module baudrate_generator(
             r_tick <= 1'b0;
         end else begin
             // 1bps : 100_000_000 - 1
-            // 10bps : 10_000_000 - 1 (0ì„ 1ê°œ ì œê±°), 1ì´ˆì— 10í´ëŸ­ ë°œìƒ
-            // 100bps : 1_000_000 - 1 (0ì„ 2ê°œ ì œê±°), 1ì´ˆì— 100í´ëŸ­ ë°œìƒ
-            // 100bpsì˜ ì˜ë¯¸ : 100_000_000/100 í•´ì¤€ ê°’ìž„.
+            // 10bps : 10_000_000 - 1 (0À» 1°³ Á¦°Å), 1ÃÊ¿¡ 10Å¬·° ¹ß»ý
+            // 100bps : 1_000_000 - 1 (0À» 2°³ Á¦°Å), 1ÃÊ¿¡ 100Å¬·° ¹ß»ý
+            // 100bpsÀÇ ÀÇ¹Ì : 100_000_000/100 ÇØÁØ °ªÀÓ.
             // if(r_counter == 100_000_000/9600/16 - 1) begin
             if(r_counter == 10 - 1) begin
                 r_counter <= 0;
@@ -83,8 +83,8 @@ module transmitter (
     reg tx_reg, tx_next;
     reg tx_done_reg,tx_done_next;
     reg [7:0] temp_data_reg,temp_data_next;
-    reg [3:0] tick_cnt_reg,tick_cnt_next; // 16ë²ˆ samplingìš©ë„ë¡œ ì…ˆ
-    reg [2:0] bit_cnt_reg,bit_cnt_next;//8ê°œ,3ë¹—
+    reg [3:0] tick_cnt_reg,tick_cnt_next; // 16¹ø sampling¿ëµµ·Î ¼À
+    reg [2:0] bit_cnt_reg,bit_cnt_next;//8°³,3ºø
     
     parameter IDLE_S = 4'd0;
     parameter START_S = 4'd1;
@@ -99,7 +99,7 @@ module transmitter (
     always @(posedge clk,posedge reset) begin
         if(reset) begin
             state <= IDLE_S;
-            tx_reg <= 1'b0;
+            tx_reg <= 1'b1;
             tx_done_reg <= 1'b0;
             temp_data_reg <= 0;
             tick_cnt_reg <= 0;
@@ -116,22 +116,22 @@ module transmitter (
 
     // 2.next state combinational logic
     always @(*) begin
-        next_state = state; // latchë¥¼ ë§‰ê¸°ìœ„í•¨
+        next_state = state; // latch¸¦ ¸·±âÀ§ÇÔ
         tx_next = tx_reg;
         tx_done_next = tx_done_reg;
         temp_data_next = temp_data_reg;
         tick_cnt_next = tick_cnt_reg;
-        bit_cnt_next = bit_cnt_reg;// latchë¥¼ ë§‰ê¸°ìœ„í•¨
+        bit_cnt_next = bit_cnt_reg;// latch¸¦ ¸·±âÀ§ÇÔ
         case(state)
             IDLE_S: begin
                 // tx=1,done=0
                 tx_next = 1'b1;
                 tx_done_next = 1'b0;
                 if(start == 1'b1) begin
-                    // dataì˜ next stateì— ê°’ ì €ìž¥ "latching"í•œë‹¤ê³  í•œë‹¤.
+                    // dataÀÇ next state¿¡ °ª ÀúÀå "latching"ÇÑ´Ù°í ÇÑ´Ù.
                     temp_data_next = tx_data;
                     next_state = START_S;
-                    tick_cnt_next = 0; // startì‹ í˜¸ ë“¤ì–´ì˜¤ë©´ ì´ˆê¸°í™”
+                    tick_cnt_next = 0; // start½ÅÈ£ µé¾î¿À¸é ÃÊ±âÈ­
                     bit_cnt_next = 0;
                 end
             end
@@ -167,7 +167,7 @@ module transmitter (
             //     tx_next = temp_data_next[0];
             //     if(br_tick) begin
             //         if(tick_cnt_reg == 15) begin
-            //             next_state = D1_S;  //br_tickì´ ë“¤ì–´ì˜¤ì§€ ì•Šìœ¼ë©´, next_state = state;ë¡œ ìžê¸°ìžì‹ (start) ìœ ì§€!!!
+            //             next_state = D1_S;  //br_tickÀÌ µé¾î¿ÀÁö ¾ÊÀ¸¸é, next_state = state;·Î ÀÚ±âÀÚ½Å(start) À¯Áö!!!
             //             tick_cnt_next = 0;
             //         end else begin
             //             tick_cnt_next = tick_cnt_reg + 1;
@@ -178,7 +178,7 @@ module transmitter (
             //     tx_next = temp_data_next[1];
             //     if(br_tick) begin
             //         if(tick_cnt_reg == 15) begin
-            //             next_state = D2_S;  //br_tickì´ ë“¤ì–´ì˜¤ì§€ ì•Šìœ¼ë©´, next_state = state;ë¡œ ìžê¸°ìžì‹ (start) ìœ ì§€!!!
+            //             next_state = D2_S;  //br_tickÀÌ µé¾î¿ÀÁö ¾ÊÀ¸¸é, next_state = state;·Î ÀÚ±âÀÚ½Å(start) À¯Áö!!!
             //             tick_cnt_next = 0;
             //         end else begin
             //             tick_cnt_next = tick_cnt_reg + 1;
@@ -189,7 +189,7 @@ module transmitter (
             //     tx_next = temp_data_next[2];
             //     if(br_tick) begin
             //         if(tick_cnt_reg == 15) begin
-            //             next_state = D3_S;  //br_tickì´ ë“¤ì–´ì˜¤ì§€ ì•Šìœ¼ë©´, next_state = state;ë¡œ ìžê¸°ìžì‹ (start) ìœ ì§€!!!
+            //             next_state = D3_S;  //br_tickÀÌ µé¾î¿ÀÁö ¾ÊÀ¸¸é, next_state = state;·Î ÀÚ±âÀÚ½Å(start) À¯Áö!!!
             //             tick_cnt_next = 0;
             //         end else begin
             //             tick_cnt_next = tick_cnt_reg + 1;
@@ -200,7 +200,7 @@ module transmitter (
             //     tx_next = temp_data_next[3];
             //     if(br_tick) begin
             //         if(tick_cnt_reg == 15) begin
-            //             next_state = D4_S;  //br_tickì´ ë“¤ì–´ì˜¤ì§€ ì•Šìœ¼ë©´, next_state = state;ë¡œ ìžê¸°ìžì‹ (start) ìœ ì§€!!!
+            //             next_state = D4_S;  //br_tickÀÌ µé¾î¿ÀÁö ¾ÊÀ¸¸é, next_state = state;·Î ÀÚ±âÀÚ½Å(start) À¯Áö!!!
             //             tick_cnt_next = 0;
             //         end else begin
             //             tick_cnt_next = tick_cnt_reg + 1;
@@ -211,7 +211,7 @@ module transmitter (
             //     tx_next = temp_data_next[4];
             //     if(br_tick) begin
             //         if(tick_cnt_reg == 15) begin
-            //             next_state = D5_S;  //br_tickì´ ë“¤ì–´ì˜¤ì§€ ì•Šìœ¼ë©´, next_state = state;ë¡œ ìžê¸°ìžì‹ (start) ìœ ì§€!!!
+            //             next_state = D5_S;  //br_tickÀÌ µé¾î¿ÀÁö ¾ÊÀ¸¸é, next_state = state;·Î ÀÚ±âÀÚ½Å(start) À¯Áö!!!
             //             tick_cnt_next = 0;
             //         end else begin
             //             tick_cnt_next = tick_cnt_reg + 1;
