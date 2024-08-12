@@ -1,13 +1,17 @@
 `timescale 1ns / 1ps
 
 module top_uart(
+    // global signal
     input clk,
     input reset,
+    // transmitter signal
     input start,
     input [7:0] tx_data,
-    output [7:0] o_rx_data,
-    output o_txd,
     output o_tx_done,
+    output o_txd,
+    // receiver signal
+    input rx,
+    output [7:0] o_rx_data,
     output o_rx_done
     );
 
@@ -29,15 +33,23 @@ module top_uart(
         .tx(o_txd),
         .tx_done(o_tx_done)
     );
-
+    
     receiver u_receiver(
         .clk(clk),
         .reset(reset),
-        .rx(o_txd),
+        .rx(rx),
         .br_tick(w_br_tick),
         .rx_data(o_rx_data),
         .rx_done(o_rx_done)
     );
+    // receiver u_receiver(
+    //     .clk(clk),
+    //     .reset(reset),
+    //     .rx(o_txd),
+    //     .br_tick(w_br_tick),
+    //     .rx_data(o_rx_data),
+    //     .rx_done(o_rx_done)
+    // );
 endmodule
 
 module baudrate_generator(
@@ -266,4 +278,117 @@ module transmitter (
         endcase
     end
     
+endmodule
+
+
+
+module receiver(
+    input          clk,
+    input          reset,
+    input          br_tick,
+    input          rx,
+    output  [7:0]  rx_data,
+    output         rx_done
+);
+    parameter IDLE = 2'd0,START = 2'd1,DATA = 2'd2, STOP = 2'd3;
+    reg [1:0] state,next_state;
+    reg [7:0] rx_data_reg,rx_data_next;
+    reg [15:0] sample_bit_reg,sample_bit_next;
+    reg [2:0] bit_cnt_reg,bit_cnt_next; // 8번 count
+    reg [3:0] sample_cnt_reg, sample_cnt_next;
+    reg rx_done_reg,rx_done_next;
+
+    // 3.output combinational logic
+    assign rx_data = rx_data_reg;
+    assign rx_done = rx_done_reg;
+
+    // 1.regsister state logic
+    always @(posedge clk or posedge reset) begin
+        if(reset) begin
+            state <= IDLE;
+            rx_data_reg <= 0;
+            sample_cnt_reg <= 0;
+            rx_done_reg <= 1'b0;
+            sample_cnt_reg <= 0;
+            sample_bit_reg <= 0;
+            rx_data_reg <= 0;
+            bit_cnt_reg <= 0;
+        end else begin
+            rx_data_reg <= rx_data_next;
+            state <= next_state;
+            sample_cnt_reg <= sample_cnt_next;
+            rx_done_reg <= rx_done_next;
+            sample_cnt_reg <= sample_cnt_next;
+            sample_bit_reg <= sample_bit_next;
+            rx_data_reg <= rx_data_next;
+            bit_cnt_reg <= bit_cnt_next;
+        end
+    end
+
+    // 2. next_state combinational logic
+    always @(*) begin
+        next_state      = state; // to prevent latch
+        rx_done_next    = rx_done_reg;
+        sample_cnt_next = sample_cnt_reg;
+        sample_bit_next = sample_bit_reg;
+        rx_data_next = rx_data_reg;
+        bit_cnt_next = bit_cnt_reg;
+        case (state)
+            IDLE: begin
+                rx_done_next = 1'b0;
+                if(rx == 1'b0) begin
+                    // start신호가 들어오면
+                    sample_cnt_next = 0; // baud rate sample cnt
+                    next_state = START;
+                end else begin
+                    next_state = IDLE; // state를 자기자신으로
+                end
+            end
+            START: begin
+                // rx_data = 받을데이터 초기화 해두는 것.
+                rx_data_next = 0;
+                if(br_tick) begin
+                    if(sample_cnt_reg == 15) begin
+                        sample_cnt_next = 0;
+                        next_state = DATA;
+                    end else begin
+                        sample_cnt_next = sample_cnt_reg + 1;
+                        next_state = START; //자기자신 유지
+                    end
+                end
+            end 
+            DATA : begin
+                if(br_tick) begin
+                    sample_bit_next = {rx,sample_bit_reg[15:1]}; // 15가 안되서?? 위로 올림
+                    if(sample_cnt_reg == 15) begin
+                        sample_cnt_next = 0;
+                        // rx_data_next[7] = sample_bit_reg[7];
+                        rx_data_next = {sample_bit_reg[7],rx_data_reg[7:1]};
+                        if(bit_cnt_reg == 7) begin
+                            // 8비트 다 채우면
+                            bit_cnt_next = 0;
+                            next_state = STOP;
+                        end else begin
+                            bit_cnt_next = bit_cnt_reg + 1;
+                        end
+                    end 
+                    else begin
+                        sample_cnt_next = sample_cnt_reg + 1;
+                    end
+                end
+            end
+            STOP : begin
+                if(br_tick) begin
+                    if(sample_cnt_reg == 15) begin
+                        sample_cnt_next = 0;
+                        rx_done_next = 1'b1;
+                        next_state = IDLE;
+                    end else begin
+                        sample_cnt_next = sample_cnt_reg + 1;
+                    end
+                end
+            end
+        endcase
+    end
+
 endmodule

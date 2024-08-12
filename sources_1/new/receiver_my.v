@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module receiver(
+module receiver_my(
     input       clk,
     input       reset,
     input       rx,
